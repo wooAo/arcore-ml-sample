@@ -33,7 +33,7 @@ abstract class ObjectDetector(val context: Context) {
    * Infers a list of [DetectedObjectResult] given a camera image frame, which contains a confidence level,
    * a label, and a pixel coordinate on the image which is believed to be the center of the object.
    */
-  abstract suspend fun analyze(image: Image, imageRotation: Int): List<DetectedObjectResult>
+  abstract suspend fun analyze(image: Image, imageRotation: Int, row: Boolean): List<DetectedObjectResult>
 
   /**
    * [Frame.acquireCameraImage] returns an image in YUV format.

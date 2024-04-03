@@ -75,8 +75,8 @@ class TextTextureCache {
   }
 
   val textPaint = Paint().apply {
-    textSize = 26f
-    setARGB(0xff, 0xea, 0x43, 0x35)
+    textSize = 24f
+    setARGB(0xff, 0x00, 0xff, 0x00)
     style = Paint.Style.FILL
     isAntiAlias = true
     textAlign = Paint.Align.CENTER

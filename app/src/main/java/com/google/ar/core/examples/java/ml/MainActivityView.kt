@@ -18,6 +18,7 @@ package com.google.ar.core.examples.java.ml
 
 import android.opengl.GLSurfaceView
 import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -34,7 +35,7 @@ class MainActivityView(val activity: MainActivity, renderer: AppRenderer) : Defa
     SampleRender(this, renderer, activity.assets)
   }
   val useCloudMlSwitch = root.findViewById<SwitchCompat>(R.id.useCloudMlSwitch)
-  val scanButton = root.findViewById<AppCompatButton>(R.id.scanButton)
+  val scanButton = root.findViewById<ImageView>(R.id.scanButton)
   val resetButton = root.findViewById<AppCompatButton>(R.id.clearButton)
   val snackbarHelper = SnackbarHelper().apply {
     setParentView(root.findViewById(R.id.coordinatorLayout))
@@ -57,11 +58,11 @@ class MainActivityView(val activity: MainActivity, renderer: AppRenderer) : Defa
   fun setScanningActive(active: Boolean) = when(active) {
     true -> {
       scanButton.isEnabled = false
-      scanButton.setText(activity.getString(R.string.scan_busy))
+//      scanButton.setText(activity.getString(R.string.scan_busy))
     }
     false -> {
       scanButton.isEnabled = true
-      scanButton.setText(activity.getString(R.string.scan_available))
+//      scanButton.setText(activity.getString(R.string.scan_available))
     }
   }
 }

@@ -25,5 +25,6 @@ package com.google.ar.core.examples.java.ml.classification
 data class DetectedObjectResult(
   val confidence: Float,
   val label: String,
-  val centerCoordinate: Pair<Int, Int>
+  val centerCoordinate: Pair<Int, Int>,
+  val boundingBox: Pair<Pair<Int, Int>, Pair<Int, Int>> // x, y, w, h
 )

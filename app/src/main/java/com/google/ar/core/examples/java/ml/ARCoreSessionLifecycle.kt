@@ -17,10 +17,12 @@
 package com.google.ar.core.examples.java.ml
 
 import android.app.Activity
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.ar.core.ArCoreApk
+import com.google.ar.core.Config
 import com.google.ar.core.Session
 import com.google.ar.core.examples.java.common.helpers.CameraPermissionHelper
 import com.google.ar.core.exceptions.CameraNotAvailableException
@@ -34,6 +36,7 @@ class ARCoreSessionLifecycleHelper(
   val activity: Activity,
   val features: Set<Session.Feature> = setOf()
 ) : DefaultLifecycleObserver {
+  private val TAG: String = "ARCoreSessionLifecycleHelper"
   var installRequested = false
   var sessionCache: Session? = null
     private set
@@ -79,9 +82,20 @@ class ARCoreSessionLifecycleHelper(
     }
 
     val session = tryCreateSession() ?: return
+    val config = Config(session)
+    config.setFocusMode(Config.FocusMode.AUTO)
+    if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
+//      Log.d(TAG+"_D", "Enabling depth mode.")
+      config.setDepthMode(Config.DepthMode.AUTOMATIC)
+    }
+    config.setPlaneFindingMode(Config.PlaneFindingMode.VERTICAL)
+    config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR)
+    session.configure(config)
+    Log.d(TAG, "${config.focusMode}")
     try {
       beforeSessionResume?.invoke(session)
       session.resume()
+      Log.d(TAG, "${config.focusMode}")
       sessionCache = session
     } catch (e: CameraNotAvailableException) {
       exceptionCallback?.invoke(e)

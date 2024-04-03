@@ -16,6 +16,7 @@
 
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -25,28 +26,41 @@
       android:layout_width="fill_parent"
       android:layout_height="fill_parent" />
 
+
+  <ImageView
+      android:id="@+id/picture_list"
+      android:layout_width="60dp"
+      android:layout_height="60dp"
+      android:layout_gravity="bottom|start"
+      android:layout_marginBottom="20dp"
+      android:scaleType="centerCrop"
+      android:src="@mipmap/reg"
+      />
+
+
   <LinearLayout
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginBottom="80dp"
+      android:layout_marginBottom="20dp"
       android:layout_gravity="bottom|center_horizontal"
       app:layout_dodgeInsetEdges="bottom">
 
-    <androidx.appcompat.widget.AppCompatButton
+    <ImageView
         android:id="@+id/scanButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="60dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:src="@drawable/click_button_selector"
         android:text="@string/scan_available" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/clearButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="60dp"
-        android:text="@string/clear" />
-
   </LinearLayout>
+
+  <androidx.appcompat.widget.AppCompatButton
+      android:id="@+id/clearButton"
+      android:layout_width="80dp"
+      android:layout_height="60dp"
+      android:layout_marginBottom="20dp"
+      android:layout_gravity="bottom|end"
+      android:text="@string/clear" />
 
   <androidx.appcompat.widget.SwitchCompat
       android:id="@+id/useCloudMlSwitch"
@@ -55,6 +69,16 @@
       android:layout_gravity="top|end"
       android:padding="16dp"
       android:background="#55FFFFFF"
-      android:text="@string/use_cloud_ml" />
+      android:text="@string/use_cloud_ml"
+      android:visibility="gone"/>
+
+  <Switch
+      android:id="@+id/switch_focus_mode"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="right|top"
+      android:checked="false"
+      android:text="switch_focus_mode"
+      android:textColor="#ffffff" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -16,6 +16,7 @@
 
 package com.google.ar.core.examples.java.ml.render
 
+import android.util.Log
 import com.google.ar.core.Pose
 import com.google.ar.core.examples.java.common.samplerender.Mesh
 import com.google.ar.core.examples.java.common.samplerender.SampleRender
@@ -97,7 +98,6 @@ class LabelRender {
   }
 
   val labelOrigin = FloatArray(3)
-
   /**
    * Draws a label quad with text [label] at [pose]. The label will rotate to face [cameraPose] around the Y-axis.
    */

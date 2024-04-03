@@ -37,9 +37,9 @@ class PointCloudRender {
       render, "shaders/point_cloud.vert", "shaders/point_cloud.frag",  /*defines=*/null
     )
       .setVec4(
-        "u_Color", floatArrayOf(31.0f / 255.0f, 188.0f / 255.0f, 210.0f / 255.0f, 1.0f)
+        "u_Color", floatArrayOf(31.0f / 255.0f, 188.0f / 255.0f, 210.0f / 255.0f, 0.5f)
       )
-      .setFloat("u_PointSize", 5.0f)
+      .setFloat("u_PointSize", 25f)
 
     // four entries per vertex: X, Y, Z, confidence
     pointCloudVertexBuffer = VertexBuffer(render, 4, null)

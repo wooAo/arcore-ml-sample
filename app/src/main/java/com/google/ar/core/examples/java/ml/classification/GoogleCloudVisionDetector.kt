@@ -55,7 +55,7 @@ class GoogleCloudVisionDetector(val activity: MainActivity) : ObjectDetector(act
   val settings = ImageAnnotatorSettings.newBuilder().setCredentialsProvider { credentials }.build()
   val vision = ImageAnnotatorClient.create(settings)
 
-  override suspend fun analyze(image: Image, imageRotation: Int): List<DetectedObjectResult> {
+  override suspend fun analyze(image: Image, imageRotation: Int, row: Boolean): List<DetectedObjectResult> {
     // `image` is in YUV (https://developers.google.com/ar/reference/java/com/google/ar/core/Frame#acquireCameraImage()),
     val convertYuv = convertYuv(image)
 
@@ -72,7 +72,17 @@ class GoogleCloudVisionDetector(val activity: MainActivity) : ObjectDetector(act
       val center = it.boundingPoly.normalizedVerticesList.calculateAverage()
       val absoluteCoordinates = center.toAbsoluteCoordinates(rotatedImage.width, rotatedImage.height)
       val rotatedCoordinates = absoluteCoordinates.rotateCoordinates(rotatedImage.width, rotatedImage.height, imageRotation)
-      DetectedObjectResult(it.score, it.name, rotatedCoordinates)
+      val boundingbox = Pair(
+        Pair(
+          0,
+          0
+        ),
+        Pair(
+          0,
+          0
+        )
+      )
+      DetectedObjectResult(it.score, it.name, rotatedCoordinates, boundingbox)
     }
   }
 

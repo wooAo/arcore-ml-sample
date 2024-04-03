@@ -18,12 +18,14 @@ package com.google.ar.core.examples.java.ml
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.ar.core.CameraConfig
 import com.google.ar.core.CameraConfigFilter
 import com.google.ar.core.Config
 import com.google.ar.core.examples.java.common.helpers.FullScreenHelper
+import com.google.ar.core.examples.java.ml.classification.YoloV5Ncnn
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.UnavailableApkTooOldException
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException
@@ -38,6 +40,12 @@ class MainActivity : AppCompatActivity() {
 
   lateinit var renderer: AppRenderer
   lateinit var view: MainActivityView
+  lateinit var focusModeSwitch: Switch
+  lateinit var config: Config
+
+  companion object {
+    val yoloV5Ncnn = YoloV5Ncnn()
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -59,16 +67,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     arCoreSessionHelper.beforeSessionResume = { session ->
-      session.configure(
-        session.config.apply {
-          // To get the best image of the object in question, enable autofocus.
-          focusMode = Config.FocusMode.AUTO
-          if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
-            depthMode = Config.DepthMode.AUTOMATIC
-          }
-        }
-      )
-
+      val config = Config(session)
+      config.setFocusMode(Config.FocusMode.AUTO)
+      if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
+        Log.d(TAG+"_D", "Enabling depth mode.")
+        config.setDepthMode(Config.DepthMode.AUTOMATIC)
+      }
+      config.setPlaneFindingMode(Config.PlaneFindingMode.VERTICAL)
+      config.setLightEstimationMode(Config.LightEstimationMode.DISABLED)
+      session.configure(config)
       val filter = CameraConfigFilter(session)
         .setFacingDirection(CameraConfig.FacingDirection.BACK)
       val configs = session.getSupportedCameraConfigs(filter)
@@ -84,6 +91,12 @@ class MainActivity : AppCompatActivity() {
     setContentView(view.root)
     renderer.bindView(view)
     lifecycle.addObserver(view)
+    yoloV5Ncnn.Init(getAssets())
+    focusModeSwitch = findViewById(R.id.switch_focus_mode)
+    focusModeSwitch.setOnCheckedChangeListener() { _, isChecked ->
+      config.setFocusMode(if (isChecked) Config.FocusMode.AUTO else Config.FocusMode.FIXED)
+      arCoreSessionHelper.sessionCache?.configure(config)
+    }
   }
 
   override fun onRequestPermissionsResult(
@@ -98,5 +111,13 @@ class MainActivity : AppCompatActivity() {
   override fun onWindowFocusChanged(hasFocus: Boolean) {
     super.onWindowFocusChanged(hasFocus)
     FullScreenHelper.setFullScreenOnWindowFocusChanged(this, hasFocus)
+  }
+
+  override fun onResume() {
+    super.onResume()
+    if (arCoreSessionHelper.sessionCache == null){
+      config = Config(arCoreSessionHelper.tryCreateSession()!!)
+    }
+    arCoreSessionHelper.sessionCache?.resume()
   }
 }

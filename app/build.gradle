@@ -4,16 +4,30 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdk 29
     buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "com.google.ar.core.examples.java.ml"
         minSdkVersion 24
-        targetSdkVersion 30
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
+
+        ndk {
+            moduleName "ncnn"
+            //noinspection ChromeOsAbiSupport
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
     }
+
+    externalNativeBuild {
+        cmake {
+            version "3.10.2"
+            path file('src/main/jni/CMakeLists.txt')
+        }
+    }
+    ndkVersion '22.0.7026061'
 
     buildTypes {
         release {
@@ -54,11 +68,11 @@ dependencies {
     implementation 'io.grpc:grpc-okhttp:1.36.0'
 
     // MLKit
-    implementation 'com.google.mlkit:object-detection:16.2.3'
-    implementation 'com.google.mlkit:object-detection-custom:16.3.1'
+//    implementation 'com.google.mlkit:object-detection:16.2.3'
+//    implementation 'com.google.mlkit:object-detection-custom:16.3.1'
 
     // ARCore
-    implementation 'com.google.ar:core:1.24.0'
+    implementation 'com.google.ar:core:1.36.0'
 
     // Obj - a simple Wavefront OBJ file loader
     // https://github.com/javagl/Obj

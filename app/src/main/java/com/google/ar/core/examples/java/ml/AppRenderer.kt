@@ -22,6 +22,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.google.ar.core.Anchor
 import com.google.ar.core.Coordinates2d
 import com.google.ar.core.Frame
+import com.google.ar.core.PointCloud
 import com.google.ar.core.TrackingState
 import com.google.ar.core.examples.java.common.helpers.DisplayRotationHelper
 import com.google.ar.core.examples.java.common.samplerender.SampleRender
@@ -30,10 +31,13 @@ import com.google.ar.core.examples.java.ml.classification.DetectedObjectResult
 import com.google.ar.core.examples.java.ml.classification.GoogleCloudVisionDetector
 import com.google.ar.core.examples.java.ml.classification.MLKitObjectDetector
 import com.google.ar.core.examples.java.ml.classification.ObjectDetector
+import com.google.ar.core.examples.java.ml.classification.YoloV5Ncnn
+import com.google.ar.core.examples.java.ml.render.BoxRender
 import com.google.ar.core.examples.java.ml.render.LabelRender
 import com.google.ar.core.examples.java.ml.render.PointCloudRender
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.NotYetAvailableException
+//import com.google.mlkit.vision.common.internal.ImageUtils
 import java.util.Collections
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,12 +58,17 @@ class AppRenderer(val activity: MainActivity) : DefaultLifecycleObserver, Sample
   lateinit var backgroundRenderer: BackgroundRenderer
   val pointCloudRender = PointCloudRender()
   val labelRenderer = LabelRender()
+  val boxRender = BoxRender()
 
   val viewMatrix = FloatArray(16)
   val projectionMatrix = FloatArray(16)
   val viewProjectionMatrix = FloatArray(16)
 
+  val currentPointcloud = FloatArray(32).toMutableList()
   val arLabeledAnchors = Collections.synchronizedList(mutableListOf<ARLabeledAnchor>())
+  val arBoxAnchors = Collections.synchronizedList(mutableListOf<Array<Anchor>>())
+//  val arBoxAnchors = Collections.synchronizedList(mutableListOf<Array<FloatArray>>())
+  val poinstAnchors = Collections.synchronizedList(mutableListOf<Anchor>())
   var scanButtonWasPressed = false
 
   val mlKitAnalyzer = MLKitObjectDetector(activity)
@@ -95,12 +104,13 @@ class AppRenderer(val activity: MainActivity) : DefaultLifecycleObserver, Sample
     view.useCloudMlSwitch.isEnabled = gcpConfigured
     currentAnalyzer = if (gcpConfigured) gcpAnalyzer else mlKitAnalyzer
 
-    if (!gcpConfigured) {
-      showSnackbar("Google Cloud Vision isn't configured (see README). The Cloud ML switch will be disabled.")
-    }
+//    if (!gcpConfigured) {
+//      showSnackbar("Google Cloud Vision isn't configured (see README). The Cloud ML switch will be disabled.")
+//    }
 
     view.resetButton.setOnClickListener {
       arLabeledAnchors.clear()
+      arBoxAnchors.clear()
       view.resetButton.isEnabled = false
       hideSnackbar()
     }
@@ -112,6 +122,7 @@ class AppRenderer(val activity: MainActivity) : DefaultLifecycleObserver, Sample
     }
     pointCloudRender.onSurfaceCreated(render)
     labelRenderer.onSurfaceCreated(render)
+    boxRender.onSurfaceCreated(render)
   }
 
   override fun onSurfaceChanged(render: SampleRender?, width: Int, height: Int) {
@@ -119,6 +130,8 @@ class AppRenderer(val activity: MainActivity) : DefaultLifecycleObserver, Sample
   }
 
   var objectResults: List<DetectedObjectResult>? = null
+
+  var rowResults: List<DetectedObjectResult>? = null
 
   override fun onDrawFrame(render: SampleRender) {
     val session = activity.arCoreSessionHelper.sessionCache ?: return
@@ -165,7 +178,17 @@ class AppRenderer(val activity: MainActivity) : DefaultLifecycleObserver, Sample
         launch(Dispatchers.IO) {
           val cameraId = session.cameraConfig.cameraId
           val imageRotation = displayRotationHelper.getCameraSensorToDisplayRotation(cameraId)
-          objectResults = currentAnalyzer.analyze(cameraImage, imageRotation)
+          val time0 = System.currentTimeMillis()
+          // disable the scan button
+          view.post {
+            view.scanButton.isEnabled = false
+          }
+          objectResults = currentAnalyzer.analyze(cameraImage, imageRotation, false)
+          rowResults = currentAnalyzer.analyze(cameraImage, imageRotation, true)
+          // iterate through points
+
+          val time1 = System.currentTimeMillis()
+          Log.d(TAG, "Object detection took ${time1 - time0} ms")
           cameraImage.close()
         }
       }
@@ -173,6 +196,7 @@ class AppRenderer(val activity: MainActivity) : DefaultLifecycleObserver, Sample
 
     /** If results were completed this frame, create [Anchor]s from model results. */
     val objects = objectResults
+    val rows = rowResults
     if (objects != null) {
       objectResults = null
       Log.i(TAG, "$currentAnalyzer got objects: $objects")
@@ -184,21 +208,21 @@ class AppRenderer(val activity: MainActivity) : DefaultLifecycleObserver, Sample
       }
       arLabeledAnchors.addAll(anchors)
       view.post {
-        view.resetButton.isEnabled = arLabeledAnchors.isNotEmpty()
-        view.setScanningActive(false)
-        when {
-          objects.isEmpty() && currentAnalyzer == mlKitAnalyzer && !mlKitAnalyzer.hasCustomModel() ->
-            showSnackbar("Default ML Kit classification model returned no results. " +
-              "For better classification performance, see the README to configure a custom model.")
-          objects.isEmpty() ->
-            showSnackbar("Classification model returned no results.")
-          anchors.size != objects.size ->
-            showSnackbar("Objects were classified, but could not be attached to an anchor. " +
-              "Try moving your device around to obtain a better understanding of the environment.")
-        }
+        view.resetButton.isEnabled = arLabeledAnchors.isNotEmpty() or arBoxAnchors.isNotEmpty()
+        view.scanButton.isEnabled = true
+//        view.setScanningActive(false)
+//        when {
+//          objects.isEmpty() && currentAnalyzer == mlKitAnalyzer && !mlKitAnalyzer.hasCustomModel() ->
+//            showSnackbar("Default ML Kit classification model returned no results. " +
+//              "For better classification performance, see the README to configure a custom model.")
+//          objects.isEmpty() ->
+//            showSnackbar("Classification model returned no results.")
+//          anchors.size != objects.size ->
+//            showSnackbar("Objects were classified, but could not be attached to an anchor. " +
+//              "Try moving your device around to obtain a better understanding of the environment.")
+//        }
       }
     }
-
     // Draw labels at their anchor position.
     for (arDetectedObject in arLabeledAnchors) {
       val anchor = arDetectedObject.anchor
@@ -208,8 +232,26 @@ class AppRenderer(val activity: MainActivity) : DefaultLifecycleObserver, Sample
         viewProjectionMatrix,
         anchor.pose,
         camera.pose,
-        arDetectedObject.label
+        "●"
       )
+    }
+
+    if (rows !=null){
+      rowResults = null
+      val boxAnchors = rows.mapNotNull { obj ->
+        val (atX, atY) = obj.boundingBox.first
+        val (atW, atH) = obj.boundingBox.second
+        val anchor0 = createAnchor(atX.toFloat(), atY.toFloat(), frame)?: return@mapNotNull null
+        val anchor2 = createAnchor((atX+atW).toFloat(), (atY+atH).toFloat(), frame)?: return@mapNotNull null
+        arrayOf(anchor0, anchor2)
+      }
+      arBoxAnchors.addAll(boxAnchors)
+    }
+
+    for (anchors in arBoxAnchors) {
+        if (anchors.any { anchor -> anchor.trackingState != TrackingState.TRACKING }) continue
+        val anchorPoses = anchors.map { anchor -> anchor.pose }.toTypedArray()
+        boxRender.drawBox(render, viewProjectionMatrix, anchorPoses)
     }
   }
 
